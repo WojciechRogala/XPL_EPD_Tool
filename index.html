@@ -882,19 +882,19 @@
                     // 1. USTALENIE PARAMETRÓW DLA BETONU KOMÓRKOWEGO (YTONG)
                     let lambda_aac = 0.072; // EnergoUltra+ [W/(m*K)]
                     let density_aac = 300;  // [kg/m³]
-                    let epdA1A3_aac_m3 = 75; // [kg CO2eq/m³] faza produkcyjna A1-A3
-                    let epdB1_aac_m3 = -15; // [kg CO2eq/m³] karbonatyzacja B1 (ujemna!)
-                    let epdC_aac_m3 = 18;   // [kg CO2eq/m³] moduł C
-                    let epdD_aac_m3 = -12;  // [kg CO2eq/m³] uniknięte emisje D
+                    let epdA1A3_aac_m3 = 147; // [kg CO2eq/m³] faza produkcyjna A1-A3
+                    let epdB1_aac_m3 = -60; // [kg CO2eq/m³] karbonatyzacja B1 (ujemna!)
+                    let epdC_aac_m3 = 2;   // [kg CO2eq/m³] moduł C
+                    let epdD_aac_m3 = -0;  // [kg CO2eq/m³] uniknięte emisje D
                     let epdLabel_aac = "ITB-EPD-483/2023 (Ytong EnergoUltra+)";
 
                     if (product === 'standard') {
-                        lambda_aac = 0.110; // Standard / Acura
-                        density_aac = 450;
-                        epdA1A3_aac_m3 = 83;
-                        epdB1_aac_m3 = -14;
-                        epdC_aac_m3 = 19;
-                        epdD_aac_m3 = -11;
+                        lambda_aac = 0.120; // Standard / Acura
+                        density_aac = 475;
+                        epdA1A3_aac_m3 = 170;
+                        epdB1_aac_m3 = -76;
+                        epdC_aac_m3 = 10;
+                        epdD_aac_m3 = -2;
                         epdLabel_aac = "ITB-EPD-484/2023 (Ytong Acura)";
                     }
                     
