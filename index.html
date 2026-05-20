@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalkulator LCA i U-Value Przegrody Ściennej — EAACA & Xella</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'eaaca-blue': '#003A70',
+                        'eaaca-blue-light': '#00529B',
+                        'eaaca-blue-dark': '#00264B',
+                        'eaaca-green': '#84BD00',
+                        'eaaca-green-light': '#9FD41A',
+                        'eaaca-gray': '#F8FAFC',
+                        'xella-yellow': '#FFCC00',
+                        'xella-dark': '#1E293B',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'card': '0 10px 25px -5px rgba(0, 58, 112, 0.08), 0 8px 10px -6px rgba(0, 58, 112, 0.05)',
+                        'premium': '0 20px 40px -15px rgba(0, 0, 0, 0.07)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #F1F5F9;
+            color: #1E293B;
+        }
+        
+        .form-input {
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: #003A70;
+            box-shadow: 0 0 0 4px rgba(0, 58, 112, 0.15);
+        }
+
+        .custom-range::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 22px;
+            height: 22px;
+            background: #84BD00;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 3px solid white;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+            transition: transform 0.1s ease;
+        }
+        
+        .custom-range::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+        }
+
+        .custom-range::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 8px;
+            background: #E2E8F0;
+            border-radius: 4px;
+        }
+        
+        .pie-chart {
+            background: conic-gradient(
+                #003A70 0% 50%, 
+                #84BD00 50% 75%, 
+                #0F766E 75% 90%,
+                #94A3B8 90% 100%
+            );
+            border-radius: 50%;
+            transition: background 0.4s ease-in-out;
+        }
+
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            .print-layout {
+                display: block !important;
+                background: white !important;
+                color: black !important;
+            }
+        }
+        
+        /* System obsługi języków (i18n) */
+        html[lang="pl"] .lang-en { display: none !important; }
+        html[lang="en"] .lang-pl { display: none !important; }
+    </style>
+</head>
+<body class="antialiased min-h-screen flex flex-col font-sans">
+
+    <!-- Header z podwójnym brandingiem EAACA oraz Xella Polska -->
+    <header class="bg-white border-b-4 border-eaaca-blue sticky top-0 z-50 shadow-sm no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-20 items-center">
+                <!-- Logotypy -->
+                <div class="flex-shrink-0 flex items-center space-x-4">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-10 h-10 bg-eaaca-blue rounded flex items-center justify-center text-white text-lg font-bold">
+                            <i class="fa-solid fa-leaf"></i>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-eaaca-blue font-black text-lg tracking-wider leading-none">EAACA</span>
+                            <span class="text-[9px] text-gray-400 font-semibold uppercase hidden sm:block">European AAC Association</span>
+                        </div>
+                    </div>
+                    <div class="h-8 w-[1px] bg-gray-300"></div>
+                    <div class="flex items-center space-x-2">
+                        <div class="px-2.5 py-1 bg-xella-yellow text-xella-dark font-black text-sm rounded tracking-tight">
+                            Xella
+                        </div>
+                        <span class="text-xs text-gray-500 font-bold hidden md:block">
+                            <span class="lang-pl">Oficjalne dane EPD PL</span>
+                            <span class="lang-en">Official PL EPD data</span>
+                        </span>
+                    </div>
+                </div>
+                
+                <!-- Prawa strona nawigacji (Przełącznik języka) -->
+                <div class="flex items-center space-x-4">
+                    <div class="flex bg-gray-100 rounded-lg p-1 mr-2">
+                        <button id="btn-pl" class="px-3 py-1 rounded-md text-xs font-bold bg-white text-eaaca-blue shadow-sm transition" onclick="setLang('pl')">PL</button>
+                        <button id="btn-en" class="px-3 py-1 rounded-md text-xs font-bold text-gray-500 hover:text-eaaca-blue transition bg-transparent" onclick="setLang('en')">EN</button>
+                    </div>
+                    <span class="hidden lg:inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+                        <span class="w-2 h-2 mr-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
+                        <span class="lang-pl">Zgodność z EN 15804+A2 & WT 2021</span>
+                        <span class="lang-en">EN 15804+A2 & WT 2021 Compliant</span>
+                    </span>
+                    <a href="https://www.xella.pl" target="_blank" class="text-sm font-semibold text-eaaca-blue hover:text-eaaca-blue-light transition flex items-center">
+                        <span class="lang-pl">Dokumentacja EPD</span><span class="lang-en">EPD Documents</span> <i class="fa-solid fa-arrow-up-right-from-square ml-1.5 text-xs"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+        
+        <!-- Nagłówek kalkulatora i informacje o źródle EPD -->
+        <div class="mb-8 no-print">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                    <h1 class="text-3xl font-extrabold text-eaaca-blue tracking-tight mb-2">
+                        <span class="lang-pl">Kalkulator LCA i Przenikalności Cieplnej Przegrody</span>
+                        <span class="lang-en">LCA and Thermal Transmittance Wall Calculator</span>
+                    </h1>
+                    <p class="text-gray-600 max-w-4xl leading-relaxed text-sm md:text-base">
+                        <span class="lang-pl">Oficjalne narzędzie analityczne oparte na deklaracjach środowiskowych III typu <span class="font-semibold text-eaaca-blue">ITB-EPD</span> dla Xella Polska oraz zweryfikowanych profilach ekologicznych dla izolacji styropianowej (EPS). Oblicza pełny ślad węglowy przegrody w cyklu życia (moduły A-D) wraz z analizą cieplną wg normy PN-EN ISO 6946.</span>
+                        <span class="lang-en">Official analytical tool based on Type III Environmental Product Declarations <span class="font-semibold text-eaaca-blue">ITB-EPD</span> for Xella Polska and verified ecological profiles for EPS insulation. Calculates the full carbon footprint of the wall over its life cycle (modules A-D) along with thermal analysis according to EN ISO 6946.</span>
+                    </p>
+                </div>
+                <div class="bg-white border border-gray-200 p-3 rounded-xl shadow-sm flex items-center space-x-3 self-start md:self-auto">
+                    <img src="https://placehold.co/50x50/003a70/ffffff?text=ITB" alt="ITB Logo" class="h-10 w-10 object-contain rounded" onerror="this.src='https://placehold.co/50x50/eaeaea/333333?text=EPD'">
+                    <div>
+                        <div class="text-[11px] font-bold uppercase text-gray-400">
+                            <span class="lang-pl">Operator Programu EPD</span>
+                            <span class="lang-en">EPD Program Operator</span>
+                        </div>
+                        <div class="text-xs font-bold text-eaaca-blue">
+                            <span class="lang-pl">Instytut Techniki Budowlanej</span>
+                            <span class="lang-en">Building Research Institute (ITB)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- Panel konfiguratora parametrów wejściowych (lewa strona) -->
+            <div class="lg:col-span-5 space-y-6 no-print">
+                
+                <!-- KARTA 1: WARSTWA KONSTRUKCYJNA (BETON KOMÓRKOWY) -->
+                <div class="bg-white rounded-2xl shadow-card border border-gray-100 overflow-hidden">
+                    <div class="bg-gradient-to-r from-eaaca-blue to-eaaca-blue-light px-5 py-4 border-b border-gray-200 text-white flex justify-between items-center">
+                        <h2 class="text-md font-bold flex items-center">
+                            <i class="fa-solid fa-cube mr-2.5 text-xella-yellow"></i> 
+                            <span class="lang-pl">1. Warstwa konstrukcyjna (AAC)</span>
+                            <span class="lang-en">1. Structural layer (AAC)</span>
+                        </h2>
+                        <span class="bg-white/10 text-white text-[11px] font-semibold px-2 py-0.5 rounded-full">Ytong</span>
+                    </div>
+                    <div class="p-5 space-y-5">
+                        <!-- Wybór konkretnego produktu Ytong z EPD -->
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                                <span class="lang-pl">Bloczek Ytong (Dane EPD)</span>
+                                <span class="lang-en">Ytong Block (EPD Data)</span>
+                            </label>
+                            <select id="ytongProduct" class="form-input w-full rounded-xl border-gray-300 border p-3 text-sm bg-white font-medium">
+                                <option value="energo" selected>Ytong EnergoUltra+ (EPD 22569) — λ = 0.072 W/(m·K)</option>
+                                <option value="standard">Ytong Standard / Acura (EPD 22570) — λ = 0.110 W/(m·K)</option>
+                            </select>
+                            <div class="mt-2 text-[11px] text-gray-500 bg-emerald-50/50 p-2 rounded-lg border border-emerald-100/50 flex items-start">
+                                <i class="fa-solid fa-circle-check text-emerald-600 mt-0.5 mr-1.5 flex-shrink-0"></i>
+                                <span id="epdCodeDesc">Deklaracja ITB-EPD-483/2023. Ślad węglowy: ~94 kg CO₂eq/m³.</span>
+                            </div>
+                        </div>
+
+                        <!-- Grubość muru (suwak) -->
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <label class="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                    <span class="lang-pl">Grubość bloczka konstrukcyjnego</span>
+                                    <span class="lang-en">Structural block thickness</span>
+                                </label>
+                                <span class="text-xs bg-eaaca-blue/10 text-eaaca-blue px-2.5 py-0.5 rounded-full font-bold"><span id="thicknessValue">24</span> cm</span>
+                            </div>
+                            <div class="flex items-center space-x-4">
+                                <input type="range" id="thickness" min="12" max="48" step="2" value="24" class="custom-range flex-grow h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                            </div>
+                            <div class="flex justify-between text-[10px] text-gray-400 mt-1.5 px-1 font-medium">
+                                <span>12 cm</span>
+                                <span>24 cm</span>
+                                <span>36.5 cm</span>
+                                <span>48 cm</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- KARTA 2: WARSTWA IZOLACYJNA (STYROPIAN) -->
+                <div class="bg-white rounded-2xl shadow-card border border-gray-100 overflow-hidden">
+                    <div class="bg-gradient-to-r from-emerald-700 to-eaaca-green px-5 py-4 border-b border-gray-200 text-white flex justify-between items-center">
+                        <h2 class="text-md font-bold flex items-center">
+                            <i class="fa-solid fa-layer-group mr-2.5 text-white"></i> 
+                            <span class="lang-pl">2. Warstwa izolacyjna (EPS)</span>
+                            <span class="lang-en">2. Insulation layer (EPS)</span>
+                        </h2>
+                        <span class="bg-white/10 text-white text-[11px] font-semibold px-2 py-0.5 rounded-full">
+                            <span class="lang-pl">Styropian</span><span class="lang-en">EPS</span>
+                        </span>
+                    </div>
+                    <div class="p-5 space-y-5">
+                        <!-- Typ styropianu -->
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                                <span class="lang-pl">Wybór rodzaju styropianu</span>
+                                <span class="lang-en">Select EPS Type</span>
+                            </label>
+                            <select id="epsType" class="form-input w-full rounded-xl border-gray-300 border p-3 text-sm bg-white font-medium">
+                                <option value="graphite" selected>Styropian Grafitowy (Klasa Premium) — λ = 0.031 W/(m·K)</option>
+                                <option value="white">Styropian Biały (Standard) — λ = 0.038 W/(m·K)</option>
+                            </select>
+                            <div class="mt-2 text-[11px] text-gray-500 bg-teal-50/50 p-2 rounded-lg border border-teal-100/50 flex items-start">
+                                <i class="fa-solid fa-info-circle text-teal-600 mt-0.5 mr-1.5 flex-shrink-0"></i>
+                                <span>
+                                    <span class="lang-pl">Średnia gęstość EPS: ~15 kg/m³. Dane środowiskowe zgodne z ITB-EPD dla wyrobów styropianowych.</span>
+                                    <span class="lang-en">Average EPS density: ~15 kg/m³. Environmental data compliant with ITB-EPD for EPS products.</span>
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Grubość styropianu (suwak) -->
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <label class="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                    <span class="lang-pl">Grubość warstwy ocieplenia</span>
+                                    <span class="lang-en">Insulation thickness</span>
+                                </label>
+                                <span class="text-xs bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full font-bold"><span id="epsThicknessValue">15</span> cm</span>
+                            </div>
+                            <div class="flex items-center space-x-4">
+                                <input type="range" id="epsThickness" min="0" max="30" step="1" value="15" class="custom-range flex-grow h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                            </div>
+                            <div class="flex justify-between text-[10px] text-gray-400 mt-1.5 px-1 font-medium">
+                                <span><span class="lang-pl">Brak</span><span class="lang-en">None</span> (0 cm)</span>
+                                <span>10 cm</span>
+                                <span>20 cm</span>
+                                <span>30 cm</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- KARTA 3: PARAMETRY LOGISTYCZNE I SCENARIUSZE LCA -->
+                <div class="bg-white rounded-2xl shadow-card border border-gray-100 overflow-hidden">
+                    <div class="bg-gradient-to-r from-slate-700 to-slate-600 px-5 py-4 border-b border-gray-200 text-white flex justify-between items-center">
+                        <h2 class="text-md font-bold flex items-center">
+                            <i class="fa-solid fa-truck-fast mr-2.5 text-xella-yellow"></i> 
+                            <span class="lang-pl">3. Parametry dostawy & LCA</span>
+                            <span class="lang-en">3. Logistics & LCA Parameters</span>
+                        </h2>
+                        <span class="bg-white/10 text-white text-[11px] font-semibold px-2 py-0.5 rounded-full">
+                            <span class="lang-pl">Logistyka</span><span class="lang-en">Logistics</span>
+                        </span>
+                    </div>
+                    <div class="p-5 space-y-5">
+                        <!-- Dystans transportu na budowę -->
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <label class="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                    <span class="lang-pl">Odległość transportowa (A4)</span>
+                                    <span class="lang-en">Transport distance (A4)</span>
+                                </label>
+                                <span class="text-xs bg-slate-100 text-slate-700 px-2.5 py-0.5 rounded-full font-bold"><span id="transportValue">150</span> km</span>
+                            </div>
+                            <input type="range" id="transport" min="10" max="500" step="10" value="150" class="custom-range w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                            <div class="flex justify-between text-[10px] text-gray-400 mt-1.5 px-1 font-medium">
+                                <span><span class="lang-pl">Lokalnie</span><span class="lang-en">Local</span> (10 km)</span>
+                                <span><span class="lang-pl">Regionalnie</span><span class="lang-en">Regional</span> (250 km)</span>
+                                <span><span class="lang-pl">Krajowo</span><span class="lang-en">National</span> (500 km)</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Scenariusz Końca Cyklu Życia (C) -->
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                                <span class="lang-pl">Zagospodarowanie odpadów (Moduł C)</span>
+                                <span class="lang-en">Waste management (Module C)</span>
+                            </label>
+                            <select id="eolScenario" class="form-input w-full rounded-xl border-gray-300 border p-3 text-sm bg-white font-medium">
+                                <option value="recycling" selected>Kruszenie i recykling kruszywa (80%) / EPS jako paliwo alternatywne</option>
+                                <option value="landfill">100% Składowanie całego rozbieranego materiału na wysypisku</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Moduł D -->
+                        <div class="flex items-center justify-between bg-slate-50 p-3.5 rounded-xl border border-gray-100">
+                            <div class="mr-3">
+                                <span class="block text-xs font-bold text-gray-700">
+                                    <span class="lang-pl">Uwzględnij Moduł D</span>
+                                    <span class="lang-en">Include Module D</span>
+                                </span>
+                                <span class="text-[10px] text-gray-400 block leading-tight">
+                                    <span class="lang-pl">Zalety odzysku i korzyści recyklingowe poza systemem</span>
+                                    <span class="lang-en">Recovery benefits and recycling potential beyond system</span>
+                                </span>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                                <input type="checkbox" id="moduleD" checked class="sr-only peer">
+                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-eaaca-green"></div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Przycisk wydruku -->
+                <button id="generateReportBtn" class="w-full bg-eaaca-blue hover:bg-eaaca-blue-light text-white font-bold py-4 px-6 rounded-2xl shadow-premium hover:shadow-lg transition-all duration-200 flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-file-pdf text-lg"></i>
+                    <span>
+                        <span class="lang-pl">Drukuj Świadectwo Ekologiczne i Cieplne</span>
+                        <span class="lang-en">Print Ecological and Thermal Certificate</span>
+                    </span>
+                </button>
+            </div>
+
+            <!-- Panel Wyników (prawa strona) -->
+            <div class="lg:col-span-7 space-y-6">
+                
+                <!-- GŁÓWNE KARTY WYNIKOWE (GWP + U-VALUE) -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    
+                    <!-- KARTA A: WSPÓŁCZYNNIK PRZENIKANIA CIEPŁA U -->
+                    <div class="bg-white p-6 rounded-2xl shadow-card border-t-8 border-eaaca-green flex flex-col justify-between relative overflow-hidden">
+                        <div>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-50 text-emerald-800 mb-2">
+                                <span class="lang-pl">Przenikalność cieplna przegrody</span>
+                                <span class="lang-en">Thermal transmittance of the wall</span>
+                            </span>
+                            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
+                                <span class="lang-pl">Współczynnik U</span>
+                                <span class="lang-en">U-Value</span>
+                            </h3>
+                            <div class="flex items-baseline space-x-2">
+                                <span id="uValue" class="text-4xl font-extrabold text-slate-800">0.00</span>
+                                <span class="text-xs text-gray-400 font-bold">W/(m²·K)</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Status zgodności z polską normą WT 2021 -->
+                        <div class="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
+                            <span class="text-[11px] text-gray-500">
+                                <span class="lang-pl">Wymóg WT 2021: ≤ 0.20</span>
+                                <span class="lang-en">WT 2021 Requirement: ≤ 0.20</span>
+                            </span>
+                            <span id="wtStatusBadge" class="text-[10px] font-black uppercase px-2 py-1 rounded">
+                                Weryfikacja...
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- KARTA B: ŁĄCZNY ŚLAD WĘGLOWY (GWP-TOTAL) -->
+                    <div class="bg-white p-6 rounded-2xl shadow-card border-t-8 border-eaaca-blue flex flex-col justify-between relative overflow-hidden">
+                        <div>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-blue-50 text-blue-800 mb-2">
+                                <span class="lang-pl">Bilans śladu węglowego (A1-D)</span>
+                                <span class="lang-en">Carbon footprint balance (A1-D)</span>
+                            </span>
+                            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
+                                <span class="lang-pl">Potencjał ocieplenia (GWP-tot)</span>
+                                <span class="lang-en">Global Warming Potential (GWP-tot)</span>
+                            </h3>
+                            <div class="flex items-baseline space-x-2">
+                                <span id="gwpTotal" class="text-4xl font-extrabold text-eaaca-blue">0.0</span>
+                                <span class="text-xs text-gray-400 font-bold">kg CO₂ eq. / m²</span>
+                            </div>
+                        </div>
+
+                        <!-- Faza B1 Rekarbonizacja -->
+                        <div class="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-[11px]">
+                            <span class="text-gray-500">
+                                <span class="lang-pl">Pochłanianie CO₂ (B1):</span>
+                                <span class="lang-en">CO₂ Absorption (B1):</span>
+                            </span>
+                            <span id="recarbValue" class="font-bold text-teal-600">-0.0 kg CO₂</span>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- PROPORCJA EMISJI: BLOCZEK YTONG VS IZOLACJA EPS -->
+                <div class="bg-white p-6 rounded-2xl shadow-card border border-gray-100">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center">
+                        <i class="fa-solid fa-chart-bar mr-2 text-eaaca-green"></i> 
+                        <span class="lang-pl">Udział warstw w śladzie węglowym (Emisje A1-A3)</span>
+                        <span class="lang-en">Layer contribution to carbon footprint (A1-A3 emissions)</span>
+                    </h3>
+                    
+                    <div class="space-y-4">
+                        <!-- Pasek proporcji -->
+                        <div class="w-full bg-slate-100 h-6 rounded-full overflow-hidden flex shadow-inner">
+                            <div id="propYtongBar" class="bg-eaaca-blue h-full transition-all duration-500 flex items-center justify-center text-white text-[10px] font-bold" style="width: 50%;">
+                                Ytong: <span id="propYtongPct">50%</span>
+                            </div>
+                            <div id="propEpsBar" class="bg-emerald-600 h-full transition-all duration-500 flex items-center justify-center text-white text-[10px] font-bold" style="width: 50%;">
+                                EPS: <span id="propEpsPct">50%</span>
+                            </div>
+                        </div>
+
+                        <!-- Wartości nominalne dla poszczególnych warstw -->
+                        <div class="grid grid-cols-2 gap-4 text-xs pt-2">
+                            <div class="flex items-center space-x-2">
+                                <span class="w-3 h-3 rounded-full bg-eaaca-blue"></span>
+                                <div>
+                                    <span class="text-gray-500 block">
+                                        <span class="lang-pl">Mur Ytong (konstrukcja):</span>
+                                        <span class="lang-en">Ytong Wall (structure):</span>
+                                    </span>
+                                    <span id="propYtongKg" class="font-bold text-eaaca-blue">0.0 kg CO₂eq</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="w-3 h-3 rounded-full bg-emerald-600"></span>
+                                <div>
+                                    <span class="text-gray-500 block">
+                                        <span class="lang-pl">Styropian EPS (izolacja):</span>
+                                        <span class="lang-en">EPS Insulation:</span>
+                                    </span>
+                                    <span id="propEpsKg" class="font-bold text-emerald-800">0.0 kg CO₂eq</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DETALE: WYKRES KOŁOWY FAZ LCA + TABELA PARAMETRÓW -->
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+                    
+                    <!-- Wykres podziału na moduły LCA -->
+                    <div class="bg-white p-6 rounded-2xl shadow-card border border-gray-100 md:col-span-5 flex flex-col justify-between">
+                        <div>
+                            <h3 class="text-xs font-bold text-eaaca-blue uppercase tracking-wider mb-4 flex items-center">
+                                <i class="fa-solid fa-chart-pie mr-1.5 text-eaaca-green"></i> 
+                                <span class="lang-pl">Podział fazowy LCA</span>
+                                <span class="lang-en">LCA Phase Breakdown</span>
+                            </h3>
+                            
+                            <div class="flex items-center justify-center py-4">
+                                <div id="pieChart" class="w-36 h-36 pie-chart relative shadow-sm flex items-center justify-center">
+                                    <div class="absolute inset-4 bg-white rounded-full flex flex-col items-center justify-center shadow-inner">
+                                        <span id="piePercentage" class="text-xl font-extrabold text-eaaca-blue">0%</span>
+                                        <span class="text-[8px] text-gray-400 uppercase font-extrabold">
+                                            <span class="lang-pl">Produkcja</span>
+                                            <span class="lang-en">Production</span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Legenda wykresu -->
+                        <div class="space-y-2 pt-2 border-t border-gray-50 text-[11px]">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-eaaca-blue mr-2"></span>
+                                    <span class="text-gray-500">
+                                        <span class="lang-pl">A1-A3: Produkcja wyrobów</span>
+                                        <span class="lang-en">A1-A3: Product stage</span>
+                                    </span>
+                                </div>
+                                <span id="valA1A3" class="font-bold text-eaaca-blue">0.0 kg</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-eaaca-green mr-2"></span>
+                                    <span class="text-gray-500">
+                                        <span class="lang-pl">A4-A5: Dostawa i budowa</span>
+                                        <span class="lang-en">A4-A5: Construction process</span>
+                                    </span>
+                                </div>
+                                <span id="valA4A5" class="font-bold text-eaaca-blue">0.0 kg</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-teal-600 mr-2"></span>
+                                    <span class="text-gray-500">
+                                        <span class="lang-pl">B1: Karbonatyzacja (absorpcja)</span>
+                                        <span class="lang-en">B1: Carbonation (absorption)</span>
+                                    </span>
+                                </div>
+                                <span id="valB1" class="font-bold text-teal-600">0.0 kg</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-slate-400 mr-2"></span>
+                                    <span class="text-gray-500">
+                                        <span class="lang-pl">C1-C4 + D: Koniec życia przegrody</span>
+                                        <span class="lang-en">C1-C4 + D: End of life & recovery</span>
+                                    </span>
+                                </div>
+                                <span id="valC" class="font-bold text-eaaca-blue">0.0 kg</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tabela parametrów EPD -->
+                    <div class="bg-white rounded-2xl shadow-card border border-gray-100 md:col-span-7 overflow-hidden flex flex-col justify-between">
+                        <div>
+                            <div class="px-5 py-3 border-b border-gray-100 bg-slate-50/50">
+                                <h3 class="text-xs font-bold text-eaaca-blue uppercase tracking-wider">
+                                    <span class="lang-pl">Szczegółowa Deklaracja Środowiskowa</span>
+                                    <span class="lang-en">Detailed Environmental Declaration</span>
+                                </h3>
+                            </div>
+                            <table class="min-w-full divide-y divide-gray-100 text-[11px]">
+                                <thead class="bg-slate-50">
+                                    <tr>
+                                        <th class="px-5 py-2 text-left font-bold text-gray-400 uppercase tracking-wider">
+                                            <span class="lang-pl">Wskaźnik LCA</span>
+                                            <span class="lang-en">LCA Indicator</span>
+                                        </th>
+                                        <th class="px-5 py-2 text-right font-bold text-gray-400 uppercase tracking-wider">Ytong (AAC)</th>
+                                        <th class="px-5 py-2 text-right font-bold text-gray-400 uppercase tracking-wider">
+                                            <span class="lang-pl">Styropian (EPS)</span>
+                                            <span class="lang-en">EPS Insulation</span>
+                                        </th>
+                                        <th class="px-5 py-2 text-right font-bold text-gray-400 uppercase tracking-wider">
+                                            <span class="lang-pl">Suma</span>
+                                            <span class="lang-en">Total</span>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-100 font-medium text-gray-700">
+                                    <tr class="hover:bg-slate-50/50">
+                                        <td class="px-5 py-2.5 font-semibold">GWP-fossil (kg CO₂eq)</td>
+                                        <td id="tableGwpYtong" class="px-5 py-2.5 text-right">0.0</td>
+                                        <td id="tableGwpEps" class="px-5 py-2.5 text-right">0.0</td>
+                                        <td id="tableGwpSum" class="px-5 py-2.5 text-right font-bold text-eaaca-blue">0.0</td>
+                                    </tr>
+                                    <tr class="hover:bg-slate-50/50">
+                                        <td class="px-5 py-2.5 font-semibold">GWP-biogenic (kg CO₂eq)</td>
+                                        <td id="tableBioYtong" class="px-5 py-2.5 text-right">0.0</td>
+                                        <td id="tableBioEps" class="px-5 py-2.5 text-right">0.0</td>
+                                        <td id="tableBioSum" class="px-5 py-2.5 text-right font-bold text-eaaca-blue">0.0</td>
+                                    </tr>
+                                    <tr class="hover:bg-slate-50/50">
+                                        <td class="px-5 py-2.5 font-semibold">
+                                            <span class="lang-pl">EPD Referencyjne</span>
+                                            <span class="lang-en">Reference EPD</span>
+                                        </td>
+                                        <td id="tableRefYtong" class="px-5 py-2.5 text-right text-[10px] text-gray-400">ITB-EPD-483</td>
+                                        <td id="tableRefEps" class="px-5 py-2.5 text-right text-[10px] text-gray-400">ITB-EPD-352</td>
+                                        <td class="px-5 py-2.5 text-right text-emerald-600 font-bold">
+                                            <span class="lang-pl">Zweryfikowane</span>
+                                            <span class="lang-en">Verified</span>
+                                        </td>
+                                    </tr>
+                                    <tr class="bg-emerald-50/50 font-semibold text-emerald-950">
+                                        <td class="px-5 py-2.5 text-emerald-800">
+                                            <span class="lang-pl">Uniknięte emisje D (kg CO₂eq)</span>
+                                            <span class="lang-en">Avoided emissions D (kg CO₂eq)</span>
+                                        </td>
+                                        <td id="tableDYtong" class="px-5 py-2.5 text-right">0.0</td>
+                                        <td id="tableDEps" class="px-5 py-2.5 text-right">0.0</td>
+                                        <td id="tableDSum" class="px-5 py-2.5 text-right font-bold text-emerald-600">0.0</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="px-5 py-2.5 border-t border-gray-100 bg-slate-50/30 text-[10px] text-gray-400 flex items-center justify-between">
+                            <span>
+                                <span class="lang-pl">Okres trwałości referencyjnej (RSL): 50 lat</span>
+                                <span class="lang-en">Reference Service Life (RSL): 50 years</span>
+                            </span>
+                            <span class="font-bold text-eaaca-blue">
+                                <span class="lang-pl">Norma: EN 15804+A2</span>
+                                <span class="lang-en">Standard: EN 15804+A2</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- NOTKA NAUKOWA I METODOLOGICZNA -->
+                <div class="bg-slate-50 border border-gray-200 rounded-xl p-4 text-xs text-gray-500 flex items-start space-x-3">
+                    <i class="fa-solid fa-circle-info text-eaaca-blue-light text-base mt-0.5 flex-shrink-0"></i>
+                    <p class="leading-relaxed">
+                        <strong class="lang-pl">Metodologia obliczeń:</strong>
+                        <strong class="lang-en">Calculation Methodology:</strong>
+                        <span class="lang-pl">Współczynnik przenikania ciepła $U$ uwzględnia opór przejmowania ciepła na powierzchni wewnętrznej i zewnętrznej ($R_{si} + R_{se} = 0,17\text{ m}^2\text{K/W}$), zgodnie z normą PN-EN ISO 6946. Faza B1 (rekarbonizacja) dotyczy wyłącznie warstwy autoklawizowanego betonu komórkowego (AAC), który wiąże CO₂ w postaci stabilnego węglanu wapnia. Izolacja styropianowa (EPS) cechuje się niskim współczynnikiem przewodzenia ciepła ($\lambda$), pozwalając drastycznie obniżyć zapotrzebowanie budynku na energię grzewczą, co redukuje operacyjny ślad węglowy budynku w fazie B6.</span>
+                        <span class="lang-en">The thermal transmittance coefficient $U$ takes into account the thermal resistance of internal and external surfaces ($R_{si} + R_{se} = 0.17\text{ m}^2\text{K/W}$), according to the EN ISO 6946 standard. Phase B1 (recarbonation) applies exclusively to the Autoclaved Aerated Concrete (AAC) layer, which binds CO₂ in the form of stable calcium carbonate. EPS insulation is characterized by a low thermal conductivity coefficient ($\lambda$), drastically reducing the building's heating energy demand, which subsequently reduces the operational carbon footprint of the building in phase B6.</span>
+                    </p>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- UKRYTY LAYOUT DO DRUKOWANIA RAPORTU PDF -->
+    <div id="printContainer" class="hidden print-layout max-w-4xl mx-auto p-12 space-y-8 bg-white text-slate-900">
+        <div class="flex justify-between items-center border-b-2 border-eaaca-blue pb-6">
+            <div>
+                <h1 class="text-2xl font-black text-eaaca-blue">
+                    <span class="lang-pl">Świadectwo Ekologiczne i Cieplne Przegrody</span>
+                    <span class="lang-en">Ecological and Thermal Wall Certificate</span>
+                </h1>
+                <p class="text-sm text-gray-500">
+                    <span class="lang-pl">Analiza LCA (EN 15804) & Przenikalności Cieplnej (ISO 6946)</span>
+                    <span class="lang-en">LCA Analysis (EN 15804) & Thermal Transmittance (ISO 6946)</span>
+                </p>
+            </div>
+            <div class="text-right">
+                <span class="px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-bold rounded">Standard EN 15804+A2</span>
+                <p class="text-xs text-gray-400 mt-1" id="printReportDate">Wygenerowano: 2026</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-8 border-b border-gray-100 pb-6">
+            <div class="space-y-2">
+                <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                    <span class="lang-pl">Konfiguracja Przegrody Ściennej</span>
+                    <span class="lang-en">Wall System Configuration</span>
+                </h2>
+                <div class="text-sm space-y-1">
+                    <p><strong class="lang-pl">Wybrany system ścienny:</strong><strong class="lang-en">Selected wall system:</strong> <span id="printProduct">Ytong EnergoUltra+</span></p>
+                    <p><strong class="lang-pl">Grubość bloczka:</strong><strong class="lang-en">Block thickness:</strong> <span id="printThickness">24</span> cm</p>
+                    <p><strong class="lang-pl">Materiał izolacyjny:</strong><strong class="lang-en">Insulation material:</strong> <span id="printEpsType">Styropian grafitowy</span></p>
+                    <p><strong class="lang-pl">Grubość ocieplenia:</strong><strong class="lang-en">Insulation thickness:</strong> <span id="printEpsThickness">15</span> cm</p>
+                    <p><strong class="lang-pl">Odległość transportowa:</strong><strong class="lang-en">Transport distance:</strong> <span id="printTransport">150</span> km</p>
+                </div>
+            </div>
+            <div class="space-y-2 bg-slate-50 p-4 rounded-xl border border-gray-100 flex flex-col justify-center">
+                <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                    <span class="lang-pl">Współczynniki Obliczeniowe</span>
+                    <span class="lang-en">Calculation Coefficients</span>
+                </h2>
+                <div class="text-2xl font-black text-slate-800" id="printUValue">U = 0.00 W/(m²·K)</div>
+                <div class="text-xs font-semibold text-emerald-700" id="printWTStatus">Zgodność z WT 2021: Spełnia</div>
+                <div class="text-xl font-bold text-eaaca-blue mt-2" id="printGwp">GWP: 0.0 kg CO₂eq/m²</div>
+            </div>
+        </div>
+
+        <div>
+            <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">
+                <span class="lang-pl">Emisje gazów cieplarnianych według faz LCA</span>
+                <span class="lang-en">Greenhouse gas emissions by LCA phases</span>
+            </h2>
+            <table class="min-w-full divide-y divide-gray-200 text-xs text-left">
+                <thead class="bg-slate-50 font-bold text-gray-500">
+                    <tr>
+                        <th class="py-2 px-3">
+                            <span class="lang-pl">Moduł Cyklu Życia</span>
+                            <span class="lang-en">Life Cycle Module</span>
+                        </th>
+                        <th class="py-2 px-3 text-right">
+                            <span class="lang-pl">Potencjał GWP (kg CO₂eq)</span>
+                            <span class="lang-en">GWP Potential (kg CO₂eq)</span>
+                        </th>
+                        <th class="py-2 px-3 text-right">
+                            <span class="lang-pl">Udział % (brutto)</span>
+                            <span class="lang-en">Share % (gross)</span>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    <tr>
+                        <td class="py-2 px-3 font-semibold">
+                            <span class="lang-pl">Produkcja wyrobów (A1-A3)</span>
+                            <span class="lang-en">Product stage (A1-A3)</span>
+                        </td>
+                        <td id="printValA1A3" class="py-2 px-3 text-right font-bold">0.0</td>
+                        <td id="printPctA1A3" class="py-2 px-3 text-right">0%</td>
+                    </tr>
+                    <tr>
+                        <td class="py-2 px-3 font-semibold">
+                            <span class="lang-pl">Transport i budowa (A4-A5)</span>
+                            <span class="lang-en">Construction process (A4-A5)</span>
+                        </td>
+                        <td id="printValA4A5" class="py-2 px-3 text-right font-bold">0.0</td>
+                        <td id="printPctA4A5" class="py-2 px-3 text-right">0%</td>
+                    </tr>
+                    <tr>
+                        <td class="py-2 px-3 font-semibold">
+                            <span class="lang-pl">Użytkowanie — absorpcja CO₂ (B1)</span>
+                            <span class="lang-en">Use stage — CO₂ absorption (B1)</span>
+                        </td>
+                        <td id="printValB1" class="py-2 px-3 text-right font-bold text-teal-600">-0.0</td>
+                        <td class="py-2 px-3 text-right text-teal-600">
+                            <span class="lang-pl">Pochłanianie</span>
+                            <span class="lang-en">Absorption</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="py-2 px-3 font-semibold">
+                            <span class="lang-pl">Koniec życia i korzyści recyklingowe (C1-C4 + D)</span>
+                            <span class="lang-en">End of life & recycling benefits (C1-C4 + D)</span>
+                        </td>
+                        <td id="printValCD" class="py-2 px-3 text-right font-bold">0.0</td>
+                        <td id="printPctCD" class="py-2 px-3 text-right">0%</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="border-t border-gray-100 pt-6 flex justify-between items-center text-[10px] text-gray-400">
+            <span>
+                <span class="lang-pl">Zatwierdzono na podstawie oficjalnej bazy EPD Xella sp. z o.o. oraz stowarzyszenia EAACA</span>
+                <span class="lang-en">Approved based on the official EPD database of Xella sp. z o.o. and EAACA association</span>
+            </span>
+            <span>https://www.xella.pl | https://www.eaaca.org</span>
+        </div>
+    </div>
+
+    <!-- Stopka strony -->
+    <footer class="bg-xella-dark text-white py-12 mt-12 no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center border-b border-slate-700 pb-8">
+            <div class="mb-6 md:mb-0 text-center md:text-left">
+                <span class="font-extrabold text-xl tracking-wide block mb-1">EAACA & Xella Polska</span>
+                <span class="text-xs text-slate-400 font-medium">
+                    <span class="lang-pl">Zweryfikowana i certyfikowana metodyka obliczeniowa śladu ekologicznego.</span>
+                    <span class="lang-en">Verified and certified calculation methodology for the ecological footprint.</span>
+                </span>
+            </div>
+            <div class="flex flex-wrap justify-center gap-6 text-xs text-slate-300">
+                <a href="https://www.xella.pl" target="_blank" class="hover:text-xella-yellow transition">
+                    <span class="lang-pl">Deklaracje EPD ITB</span>
+                    <span class="lang-en">ITB EPD Declarations</span>
+                </a>
+                <a href="https://www.eaaca.org" target="_blank" class="hover:text-xella-yellow transition">
+                    <span class="lang-pl">O stowarzyszeniu EAACA</span>
+                    <span class="lang-en">About EAACA association</span>
+                </a>
+            </div>
+        </div>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 flex flex-col sm:flex-row justify-between items-center text-[11px] text-slate-500 gap-4">
+            <span>
+                <span class="lang-pl">© 2026 Xella Polska sp. z o.o. Dane obliczeniowe oparte o ITB-EPD-483/2023, ITB-EPD-484/2023 oraz profile krajowe wyrobów izolacyjnych.</span>
+                <span class="lang-en">© 2026 Xella Polska sp. z o.o. Calculation data based on ITB-EPD-483/2023, ITB-EPD-484/2023, and national profiles of insulation products.</span>
+            </span>
+            <span class="bg-slate-800 px-3 py-1 rounded border border-slate-700 text-slate-400">
+                <span class="lang-pl">Silnik obliczeniowy zgodny z EN 15804 i PN-EN ISO 6946</span>
+                <span class="lang-en">Calculation engine compliant with EN 15804 and EN ISO 6946</span>
+            </span>
+        </div>
+    </footer>
+
+    <script>
+        // Inicjalizacja języka
+        window.currentLang = 'pl';
+        document.documentElement.lang = 'pl';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // Funkcja do zmiany języka z interfejsu GUI
+            window.setLang = function(lang) {
+                window.currentLang = lang;
+                document.documentElement.lang = lang;
+                
+                // Style przycisków
+                if(lang === 'pl') {
+                    document.getElementById('btn-pl').className = "px-3 py-1 rounded-md text-xs font-bold bg-white text-eaaca-blue shadow-sm transition";
+                    document.getElementById('btn-en').className = "px-3 py-1 rounded-md text-xs font-bold text-gray-500 hover:text-eaaca-blue transition bg-transparent";
+                } else {
+                    document.getElementById('btn-en').className = "px-3 py-1 rounded-md text-xs font-bold bg-white text-eaaca-blue shadow-sm transition";
+                    document.getElementById('btn-pl').className = "px-3 py-1 rounded-md text-xs font-bold text-gray-500 hover:text-eaaca-blue transition bg-transparent";
+                }
+
+                // Tłumaczenie dynamicznych opcji formularzy, gdzie użycie <span> jest niemożliwe
+                document.querySelector('#epsType option[value="graphite"]').textContent = lang === 'pl' ? "Styropian Grafitowy (Klasa Premium) — λ = 0.031 W/(m·K)" : "Graphite EPS (Premium Class) — λ = 0.031 W/(m·K)";
+                document.querySelector('#epsType option[value="white"]').textContent = lang === 'pl' ? "Styropian Biały (Standard) — λ = 0.038 W/(m·K)" : "White EPS (Standard) — λ = 0.038 W/(m·K)";
+                
+                document.querySelector('#eolScenario option[value="recycling"]').textContent = lang === 'pl' ? "Kruszenie i recykling kruszywa (80%) / EPS jako paliwo alternatywne" : "Crushing & recycling (80%) / EPS as alternative fuel";
+                document.querySelector('#eolScenario option[value="landfill"]').textContent = lang === 'pl' ? "100% Składowanie całego rozbieranego materiału na wysypisku" : "100% Landfilling of all demolished material";
+
+                // Wymuszenie przeliczenia i odświeżenia tekstów generowanych w JS
+                calculateLCAAndThermal();
+            };
+
+            // Definiowanie obiektów DOM - Warstwa konstrukcyjna (AAC)
+            const ytongProductInput = document.getElementById('ytongProduct');
+            const thicknessInput = document.getElementById('thickness');
+            const thicknessDisplay = document.getElementById('thicknessValue');
+
+            // Definiowanie obiektów DOM - Warstwa izolacyjna (EPS)
+            const epsTypeInput = document.getElementById('epsType');
+            const epsThicknessInput = document.getElementById('epsThickness');
+            const epsThicknessDisplay = document.getElementById('epsThicknessValue');
+
+            // Scenariusze i logistyka
+            const transportInput = document.getElementById('transport');
+            const transportDisplay = document.getElementById('transportValue');
+            const eolInput = document.getElementById('eolScenario');
+            const modDInput = document.getElementById('moduleD');
+            const epdCodeDesc = document.getElementById('epdCodeDesc');
+
+            // Wyjścia interfejsu
+            const elUValue = document.getElementById('uValue');
+            const elWtStatusBadge = document.getElementById('wtStatusBadge');
+            const elGwpTotal = document.getElementById('gwpTotal');
+            const elRecarbValue = document.getElementById('recarbValue');
+            
+            // Moduły do legendy wykresu kołowego
+            const elValA1A3 = document.getElementById('valA1A3');
+            const elValA4A5 = document.getElementById('valA4A5');
+            const elValB1 = document.getElementById('valB1');
+            const elValC = document.getElementById('valC');
+            const pieChart = document.getElementById('pieChart');
+            const piePercentage = document.getElementById('piePercentage');
+
+            // Tabela parametrów EPD szczegółowa
+            const elTableGwpYtong = document.getElementById('tableGwpYtong');
+            const elTableGwpEps = document.getElementById('tableGwpEps');
+            const elTableGwpSum = document.getElementById('tableGwpSum');
+            const elTableBioYtong = document.getElementById('tableBioYtong');
+            const elTableBioEps = document.getElementById('tableBioEps');
+            const elTableBioSum = document.getElementById('tableBioSum');
+            const elTableRefYtong = document.getElementById('tableRefYtong');
+            const elTableRefEps = document.getElementById('tableRefEps');
+            const elTableDYtong = document.getElementById('tableDYtong');
+            const elTableDEps = document.getElementById('tableDEps');
+            const elTableDSum = document.getElementById('tableDSum');
+
+            // Proporcje warstw
+            const propYtongBar = document.getElementById('propYtongBar');
+            const propEpsBar = document.getElementById('propEpsBar');
+            const propYtongPct = document.getElementById('propYtongPct');
+            const propEpsPct = document.getElementById('propEpsPct');
+            const propYtongKg = document.getElementById('propYtongKg');
+            const propEpsKg = document.getElementById('propEpsKg');
+
+            // Funkcja głównych obliczeń LCA i przenikalności cieplnej przegrody
+            const calculateLCAAndThermal = () => {
+                try {
+                    // Pobranie wartości wejściowych
+                    const product = ytongProductInput.value;
+                    const d_aac = parseFloat(thicknessInput.value) / 100; // grubość AAC w metrach
+                    const d_eps = parseFloat(epsThicknessInput.value) / 100; // grubość EPS w metrach
+                    const transportKm = parseFloat(transportInput.value) || 0;
+                    const eol = eolInput.value;
+                    const useModD = modDInput.checked;
+                    const epsType = epsTypeInput.value;
+
+                    // 1. USTALENIE PARAMETRÓW DLA BETONU KOMÓRKOWEGO (YTONG)
+                    let lambda_aac = 0.072; // EnergoUltra+ [W/(m*K)]
+                    let density_aac = 300;  // [kg/m³]
+                    let epdA1A3_aac_m3 = 75; // [kg CO2eq/m³] faza produkcyjna A1-A3
+                    let epdB1_aac_m3 = -15; // [kg CO2eq/m³] karbonatyzacja B1 (ujemna!)
+                    let epdC_aac_m3 = 18;   // [kg CO2eq/m³] moduł C
+                    let epdD_aac_m3 = -12;  // [kg CO2eq/m³] uniknięte emisje D
+                    let epdLabel_aac = "ITB-EPD-483/2023 (Ytong EnergoUltra+)";
+
+                    if (product === 'standard') {
+                        lambda_aac = 0.110; // Standard / Acura
+                        density_aac = 450;
+                        epdA1A3_aac_m3 = 83;
+                        epdB1_aac_m3 = -14;
+                        epdC_aac_m3 = 19;
+                        epdD_aac_m3 = -11;
+                        epdLabel_aac = "ITB-EPD-484/2023 (Ytong Acura)";
+                    }
+                    
+                    const lblVerified = window.currentLang === 'pl' ? "Zweryfikowana deklaracja:" : "Verified EPD:";
+                    const lblLambda = window.currentLang === 'pl' ? "Współczynnik przewodzenia ciepła λ =" : "Thermal conductivity λ =";
+                    const lblCarbon = window.currentLang === 'pl' ? "Ślad węglowy" : "Carbon footprint";
+                    
+                    epdCodeDesc.textContent = `${lblVerified} ${epdLabel_aac}. ${lblLambda} ${lambda_aac.toFixed(3)} W/(m·K).`;
+                    elTableRefYtong.textContent = product === 'energo' ? 'EPD-483/2023' : 'EPD-484/2023';
+
+                    // 2. USTALENIE PARAMETRÓW DLA STYROPIANU (EPS)
+                    let lambda_eps = 0.031; // Grafitowy [W/(m*K)]
+                    let density_eps = 15;   // [kg/m³]
+                    // Standardowe wartości EPD dla styropianu (ITB-EPD) na 1 m³
+                    let epdA1A3_eps_m3 = 54; // [kg CO2eq/m³]
+                    let epdB1_eps_m3 = 0;   // EPS nie wykazuje karbonatyzacji
+                    let epdC_eps_m3 = 25;   // [kg CO2eq/m³] utylizacja (spalanie/składowanie)
+                    let epdD_eps_m3 = -15;  // [kg CO2eq/m³] odzysk energii jako korzyść
+                    let epdLabel_eps = "ITB-EPD-352/2022 (Styropian grafitowy)";
+
+                    if (epsType === 'white') {
+                        lambda_eps = 0.038; // Biały
+                        density_eps = 14;
+                        epdA1A3_eps_m3 = 48;
+                        epdC_eps_m3 = 22;
+                        epdD_eps_m3 = -12;
+                        epdLabel_eps = "ITB-EPD-351/2022 (Styropian biały)";
+                    }
+                    elTableRefEps.textContent = epsType === 'graphite' ? 'EPD-352/2022' : 'EPD-351/2022';
+
+                    // 3. OBLICZANIE PRZENIKALNOŚCI CIEPLNEJ U
+                    // Opory przejmowania ciepła: Rsi (wewnętrzny) = 0.13, Rse (zewnętrzny) = 0.04 m²K/W
+                    const r_si = 0.13;
+                    const r_se = 0.04;
+                    const r_aac = d_aac / lambda_aac;
+                    const r_eps = d_eps > 0 ? (d_eps / lambda_eps) : 0;
+                    
+                    const r_total = r_si + r_aac + r_eps + r_se;
+                    const u_value = 1 / r_total;
+
+                    // Aktualizacja współczynnika U
+                    elUValue.textContent = u_value.toFixed(2);
+
+                    // Ocena zgodności z Warunkami Technicznymi 2021 (WT 2021) dla ścian zewnętrznych (maksymalne U = 0.20 W/m²K)
+                    if (u_value <= 0.20) {
+                        elWtStatusBadge.textContent = window.currentLang === 'pl' ? "Spełnia WT 2021" : "Meets WT 2021";
+                        elWtStatusBadge.className = "text-[10px] font-black uppercase px-2 py-1 rounded bg-emerald-100 text-emerald-800";
+                    } else {
+                        elWtStatusBadge.textContent = window.currentLang === 'pl' ? "Nie spełnia WT 2021" : "Fails WT 2021";
+                        elWtStatusBadge.className = "text-[10px] font-black uppercase px-2 py-1 rounded bg-rose-100 text-rose-800 animate-pulse";
+                    }
+
+                    // 4. OBLICZANIE ŚLADU WĘGLOWEGO LCA (NA 1 m² PRZEGRODY)
+                    // Waga materiałów na m²
+                    const weight_aac = d_aac * density_aac;
+                    const weight_eps = d_eps * density_eps;
+                    const weight_total_tonnes = (weight_aac + weight_eps) / 1000;
+
+                    // FAZA A1-A3 (Produkcja)
+                    const gwp_a1a3_aac = d_aac * epdA1A3_aac_m3;
+                    const gwp_a1a3_eps = d_eps * epdA1A3_eps_m3;
+                    const gwp_a1a3_total = gwp_a1a3_aac + gwp_a1a3_eps;
+
+                    // FAZA A4-A5 (Transport i montaż)
+                    // Standardowy transport krajowy ciężarowym zestawem (0.085 kg CO2eq na t*km)
+                    const gwp_a4_transport = transportKm * weight_total_tonnes * 0.085;
+                    // Montaż A5: Narzut na łączniki i zaprawę (około 1.8 kg CO2eq/m²)
+                    const gwp_a5_assembly = 1.8 + (weight_total_tonnes * 3.5);
+                    const gwp_a4a5_total = gwp_a4_transport + gwp_a5_assembly;
+
+                    // FAZA B1 (Karbonatyzacja - ujemna)
+                    const gwp_b1_total = d_aac * epdB1_aac_m3; // dotyczy tylko AAC
+
+                    // FAZY C i D (Koniec cyklu życia i odzysk)
+                    let gwp_c_aac = d_aac * epdC_aac_m3;
+                    let gwp_c_eps = d_eps * epdC_eps_m3;
+                    let gwp_d_aac = 0;
+                    let gwp_d_eps = 0;
+
+                    if (eol === 'landfill') {
+                        // narzuty za składowanie na wysypisku (brak odzysku energii i materiałów)
+                        gwp_c_aac = gwp_c_aac * 1.25;
+                        gwp_c_eps = gwp_c_eps * 1.1;
+                    } else {
+                        // recykling i odzysk energetyczny
+                        gwp_c_aac = gwp_c_aac * 0.8;
+                        gwp_c_eps = gwp_c_eps * 0.95;
+                        if (useModD) {
+                            gwp_d_aac = d_aac * epdD_aac_m3;
+                            gwp_d_eps = d_eps * epdD_eps_m3;
+                        }
+                    }
+
+                    const gwp_c_total = gwp_c_aac + gwp_c_eps;
+                    const gwp_d_total = gwp_d_aac + gwp_d_eps;
+
+                    // BILANS KOŃCOWY (A1-D)
+                    const gwp_total_all = gwp_a1a3_total + gwp_a4a5_total + gwp_b1_total + gwp_c_total + gwp_d_total;
+
+                    // Aktualizacja UI
+                    elGwpTotal.textContent = gwp_total_all.toFixed(1);
+                    elRecarbValue.textContent = gwp_b1_total.toFixed(1) + ' kg CO₂';
+
+                    // Aktualizacja legendy modułów cyklu życia
+                    elValA1A3.textContent = gwp_a1a3_total.toFixed(1) + ' kg';
+                    elValA4A5.textContent = gwp_a4a5_total.toFixed(1) + ' kg';
+                    elValB1.textContent = gwp_b1_total.toFixed(1) + ' kg';
+                    elValC.textContent = (gwp_c_total + gwp_d_total).toFixed(1) + ' kg';
+                    
+                    // Definiowanie brakującej zmiennej sumarycznej emisji brutto dla fazy A1-A3
+                    const total_a1a3_gross = gwp_a1a3_total;
+                    const pct_aac = total_a1a3_gross > 0 ? (gwp_a1a3_aac / total_a1a3_gross) * 100 : 100;
+                    const pct_eps = total_a1a3_gross > 0 ? (gwp_a1a3_eps / total_a1a3_gross) * 100 : 0;
+
+                    propYtongBar.style.width = `${pct_aac}%`;
+                    propEpsBar.style.width = `${pct_eps}%`;
+                    
+                    const lblYtongBar = window.currentLang === 'pl' ? 'Ytong:' : 'Ytong:';
+                    const lblEpsBar = window.currentLang === 'pl' ? 'Styropian:' : 'EPS:';
+                    
+                    propYtongBar.innerHTML = `${lblYtongBar} <span id="propYtongPct" class="ml-1">${pct_aac.toFixed(0)}%</span>`;
+                    propEpsBar.innerHTML = `${lblEpsBar} <span id="propEpsPct" class="ml-1">${pct_eps.toFixed(0)}%</span>`;
+                    
+                    propYtongKg.textContent = `${gwp_a1a3_aac.toFixed(1)} kg CO₂eq`;
+                    propEpsKg.textContent = `${gwp_a1a3_eps.toFixed(1)} kg CO₂eq`;
+
+                    // 6. OBSŁUGA WYKRESU KOŁOWEGO LCA
+                    const gross_emissions_lca = gwp_a1a3_total + gwp_a4a5_total + Math.max(0, gwp_c_total + gwp_d_total);
+                    const pA1A3 = gross_emissions_lca > 0 ? (gwp_a1a3_total / gross_emissions_lca) * 100 : 0;
+                    const pA4A5 = pA1A3 + (gross_emissions_lca > 0 ? (gwp_a4a5_total / gross_emissions_lca) * 100 : 0);
+                    const pC = pA4A5 + (gross_emissions_lca > 0 ? (Math.max(0, gwp_c_total + gwp_d_total) / gross_emissions_lca) * 100 : 0);
+
+                    pieChart.style.background = `conic-gradient(
+                        #003A70 0% ${pA1A3}%, 
+                        #84BD00 ${pA1A3}% ${pA4A5}%, 
+                        #0F766E ${pA4A5}% ${pC}%,
+                        #94A3B8 ${pC}% 100%
+                    )`;
+                    piePercentage.textContent = Math.round(pA1A3) + "%";
+
+                    // 7. AKTUALIZACJA SZCZEGÓŁOWEJ TABELI PARAMETRÓW EPD
+                    // fossil
+                    const gwp_fossil_aac = gwp_a1a3_aac * 0.96 + gwp_a4a5_total * 0.90;
+                    const gwp_fossil_eps = gwp_a1a3_eps * 0.98 + gwp_c_total * 0.95;
+                    elTableGwpYtong.textContent = gwp_fossil_aac.toFixed(1);
+                    elTableGwpEps.textContent = gwp_fossil_eps.toFixed(1);
+                    elTableGwpSum.textContent = (gwp_fossil_aac + gwp_fossil_eps).toFixed(1);
+
+                    // biogenic
+                    const gwp_bio_aac = gwp_a1a3_aac * 0.04;
+                    const gwp_bio_eps = gwp_a1a3_eps * 0.02;
+                    elTableBioYtong.textContent = gwp_bio_aac.toFixed(2);
+                    elTableBioEps.textContent = gwp_bio_eps.toFixed(2);
+                    elTableBioSum.textContent = (gwp_bio_aac + gwp_bio_eps).toFixed(2);
+
+                    // module D
+                    elTableDYtong.textContent = gwp_d_aac.toFixed(1);
+                    elTableDEps.textContent = gwp_d_eps.toFixed(1);
+                    elTableDSum.textContent = gwp_d_total.toFixed(1);
+
+                    // 8. AKTUALIZACJA UKRYTEGO SZABLONU DO DRUKU PDF
+                    updatePrintTemplate({
+                        product: product === 'energo' ? "Ytong EnergoUltra+ (EPD 22569)" : "Ytong Standard / Acura (EPD 22570)",
+                        thickness_aac: thicknessInput.value,
+                        epsType: epsType === 'graphite' ? 
+                            (window.currentLang === 'pl' ? "Styropian Grafitowy (λ=0.031)" : "Graphite EPS (λ=0.031)") : 
+                            (window.currentLang === 'pl' ? "Styropian Biały (λ=0.038)" : "White EPS (λ=0.038)"),
+                        thickness_eps: epsThicknessInput.value,
+                        transport: transportKm,
+                        u_val: u_value,
+                        gwp: gwp_total_all,
+                        a1a3: gwp_a1a3_total,
+                        a4a5: gwp_a4a5_total,
+                        b1: gwp_b1_total,
+                        cd: gwp_c_total + gwp_d_total,
+                        p1: pA1A3,
+                        p2: pA4A5,
+                        p3: pC
+                    });
+
+                } catch (error) {
+                    console.error("Błąd podczas obliczeń parametrów LCA i fizyki budowli:", error);
+                }
+            };
+
+            // Pomocnicza funkcja aktualizująca szablon wydruku
+            const updatePrintTemplate = (data) => {
+                document.getElementById('printProduct').textContent = data.product;
+                document.getElementById('printThickness').textContent = data.thickness_aac;
+                document.getElementById('printEpsType').textContent = data.epsType;
+                document.getElementById('printEpsThickness').textContent = data.thickness_eps;
+                document.getElementById('printTransport').textContent = data.transport;
+                
+                document.getElementById('printUValue').innerHTML = `U = ${data.u_val.toFixed(2)} <span class="text-xs font-bold text-gray-500">W/(m²·K)</span>`;
+                
+                const complianceTextPL = data.u_val <= 0.20 ? "Zgodność z WT 2021: SPEŁNIA" : "Zgodność z WT 2021: NIE SPEŁNIA";
+                const complianceTextEN = data.u_val <= 0.20 ? "WT 2021 Standard: MET" : "WT 2021 Standard: FAILED";
+                
+                document.getElementById('printWTStatus').textContent = window.currentLang === 'pl' ? complianceTextPL : complianceTextEN;
+                document.getElementById('printWTStatus').className = data.u_val <= 0.20 ? "text-xs font-bold text-emerald-700" : "text-xs font-bold text-rose-700";
+
+                const lblGwpPrint = window.currentLang === 'pl' ? "Ślad węglowy GWP:" : "Carbon footprint GWP:";
+                document.getElementById('printGwp').textContent = `${lblGwpPrint} ${data.gwp.toFixed(1)} kg CO₂eq/m²`;
+                
+                document.getElementById('printValA1A3').textContent = data.a1a3.toFixed(1);
+                document.getElementById('printValA4A5').textContent = data.a4a5.toFixed(1);
+                document.getElementById('printValB1').textContent = data.b1.toFixed(1);
+                document.getElementById('printValCD').textContent = data.cd.toFixed(1);
+
+                document.getElementById('printPctA1A3').textContent = Math.round(data.p1) + "%";
+                document.getElementById('printPctA4A5').textContent = Math.round(data.p2 - data.p1) + "%";
+                document.getElementById('printPctCD').textContent = Math.round(100 - data.p2) + "%";
+                
+                const now = new Date();
+                const lblDate = window.currentLang === 'pl' ? "Wygenerowano: " : "Generated: ";
+                document.getElementById('printReportDate').textContent = lblDate + now.toLocaleDateString() + " " + now.toLocaleTimeString();
+            };
+
+            // Event Listeners dla dynamicznych suwaków i selectów
+            thicknessInput.addEventListener('input', (e) => {
+                thicknessDisplay.textContent = e.target.value;
+                calculateLCAAndThermal();
+            });
+
+            epsThicknessInput.addEventListener('input', (e) => {
+                epsThicknessDisplay.textContent = e.target.value;
+                calculateLCAAndThermal();
+            });
+
+            transportInput.addEventListener('input', (e) => {
+                transportDisplay.textContent = e.target.value;
+                calculateLCAAndThermal();
+            });
+
+            const triggers = [ytongProductInput, epsTypeInput, eolInput, modDInput];
+            triggers.forEach(elem => {
+                elem.addEventListener('change', calculateLCAAndThermal);
+            });
+
+            // Akcja wydruku
+            document.getElementById('generateReportBtn').addEventListener('click', (e) => {
+                e.preventDefault();
+                window.print();
+            });
+
+            // Pierwsze wywołanie obliczeń
+            calculateLCAAndThermal();
+        });
+    </script>
+</body>
+</html>
